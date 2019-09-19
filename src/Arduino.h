@@ -30,6 +30,9 @@
 #endif
 
 #if USE_ESPRESSIF8266
+
+#include "esp_log.h"
+
 extern uint32_t sys_now(void);
 
 #ifndef elog_i
@@ -38,7 +41,6 @@ extern uint32_t sys_now(void);
 #define elog_i ESP_LOGI
 #define elog_w ESP_LOGW
 #define elog_e ESP_LOGE
-#define elog_a ESP_LOGA
 #endif
 
 #define log_a(...)       elog_a(LOG_TAG, __VA_ARGS__)
