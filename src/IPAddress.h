@@ -31,7 +31,7 @@
 // compatibility macros to make lwIP-v1 compiling lwIP-v2 API
 #define LWIP_IPV6_NUM_ADDRESSES 0
 #define ip_2_ip4(x) (x)
-#define ipv4_addr ip_addr
+#define ip4_addr ip_addr
 #define IP_IS_V4_VAL(x) (1)
 #define IP_SET_TYPE_VAL(x,y) do { (void)0; } while (0)
 #define IP_ANY_TYPE (&ip_addr_any)
@@ -44,7 +44,7 @@
 #else // lwIP-v2+
 #define CONST const
 #if !LWIP_IPV6
-struct ip_addr: ipv4_addr { };
+struct ip_addr: ip4_addr { };
 #endif // !LWIP_IPV6
 #endif // lwIP-v2+
 
@@ -88,8 +88,6 @@ class IPAddress: public Printable {
         // to a four-byte uint8_t array is expected
         operator uint32_t() const { return isV4()? v4(): (uint32_t)0; }
         operator uint32_t()       { return isV4()? v4(): (uint32_t)0; }
-        operator u32_t()    const { return isV4()? v4():    (u32_t)0; }
-        operator u32_t()          { return isV4()? v4():    (u32_t)0; }
 
         bool isSet () const;
         operator bool () const { return isSet(); } // <-

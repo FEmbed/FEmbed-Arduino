@@ -26,18 +26,38 @@
 #if USE_FEMBED
 #include <FEmbed.h>
 
-#define millis fe_get_ticks()
+#define millis fe_get_ticks
 #endif
 
 #if USE_ESPRESSIF8266
 extern uint32_t sys_now(void);
 
+#ifndef elog_i
+#define elog_v ESP_LOGV
+#define elog_d ESP_LOGD
+#define elog_i ESP_LOGI
+#define elog_w ESP_LOGW
+#define elog_e ESP_LOGE
+#define elog_a ESP_LOGA
+#endif
+
+#define log_a(...)       elog_a(LOG_TAG, __VA_ARGS__)
+#define log_e(...)       elog_e(LOG_TAG, __VA_ARGS__)
+#define log_w(...)       elog_w(LOG_TAG, __VA_ARGS__)
+#define log_i(...)       elog_i(LOG_TAG, __VA_ARGS__)
+#define log_d(...)       elog_d(LOG_TAG, __VA_ARGS__)
+#define log_v(...)       elog_v(LOG_TAG, __VA_ARGS__)
+
 #define millis sys_now
 #endif
+
+#define yeild portYIELD
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef bool boolean;
 
 #ifdef __cplusplus
 } // extern "C"
