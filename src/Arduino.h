@@ -27,6 +27,7 @@
 #include <FEmbed.h>
 
 #define millis fe_get_ticks
+#define delay  fe_delay
 #endif
 
 #if USE_ESPRESSIF8266
@@ -34,6 +35,7 @@
 #include "esp_log.h"
 
 extern uint32_t sys_now(void);
+extern void delay(uint32_t ms);
 
 #ifndef elog_i
 #define elog_v ESP_LOGV
