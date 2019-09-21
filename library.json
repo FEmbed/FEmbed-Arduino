@@ -18,7 +18,6 @@
     "platforms": "custom8266",
     "build": {
         "flags": [
-            "-I src",
             "-DUSE_ESPRESSIF8266=1"
         ],
         "srcFilter":[
