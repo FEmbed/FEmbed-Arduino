@@ -52,6 +52,8 @@ extern "C" void delay(uint32_t ms);
 #define log_d(...)       elog_d(LOG_TAG, __VA_ARGS__)
 #define log_v(...)       elog_v(LOG_TAG, __VA_ARGS__)
 
+#define LOG_TAG "notag"
+
 #define millis sys_now
 #endif
 
@@ -62,6 +64,12 @@ extern "C" {
 #endif
 
 typedef bool boolean;
+
+inline void safecpy(void *dest, void *src, uint32_t len)
+{
+	for(uint32_t i=0; i<len; i++)
+		((uint8_t *)dest)[i] = ((uint8_t *)src)[i];
+}
 
 #ifdef __cplusplus
 } // extern "C"
