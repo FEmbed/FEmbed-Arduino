@@ -32,6 +32,8 @@
 // result objects are assumed to be writable by subsequent concatenations.
 class StringSumHelper;
 
+#define F(string_literal) (string_literal)
+
 // The string class
 class String {
         // use a function pointer to allow for "if (s)" without the

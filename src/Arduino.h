@@ -22,6 +22,7 @@
 
 #include <stdarg.h>
 #include <stdint.h>
+#include <WString.h>
 
 #if USE_FEMBED
 #include <FEmbed.h>
