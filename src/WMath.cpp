@@ -24,8 +24,8 @@
  */
 
 extern "C" {
-#include <stdlib.h>
-#include "esp_system.h"
+    #include <stdlib.h>
+    #include "esp_system.h"
 }
 
 void randomSeed(unsigned long seed)

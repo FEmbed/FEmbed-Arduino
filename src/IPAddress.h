@@ -209,7 +209,11 @@ class IPAddress: public Printable {
 
 };
 
+#ifndef INADDR_ANY
 extern CONST IPAddress INADDR_ANY;
-extern const IPAddress INADDR_NONE;
+#endif
 
+#ifndef INADDR_NONE
+extern const IPAddress INADDR_NONE;
+#endif
 #endif

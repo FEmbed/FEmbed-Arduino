@@ -65,6 +65,7 @@ extern "C" {
 #endif
 
 typedef bool boolean;
+#define bit(b) (1UL << (b))
 
 inline void safecpy(void *dest, void *src, uint32_t len)
 {
@@ -75,5 +76,13 @@ inline void safecpy(void *dest, void *src, uint32_t len)
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+// WMath prototypes
+long random(long);
+long random(long, long);
+void randomSeed(unsigned long);
+long secureRandom(long);
+long secureRandom(long, long);
+long map(long, long, long, long, long);
 
 #endif //Arduino_h
