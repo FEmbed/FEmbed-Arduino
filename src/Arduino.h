@@ -34,6 +34,7 @@
 #if USE_ESPRESSIF8266
 
 #include "esp_log.h"
+#include "portmacro.h"
 
 extern "C" uint32_t sys_now(void);
 extern "C" void delay(uint32_t ms);
@@ -58,7 +59,8 @@ extern "C" void delay(uint32_t ms);
 #define millis sys_now
 #endif
 
-#define yeild portYIELD
+inline void yield() { portYIELD(); }
+
 
 #ifdef __cplusplus
 extern "C" {

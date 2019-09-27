@@ -21,6 +21,7 @@
             "-DUSE_ESPRESSIF8266=1"
         ],
         "srcFilter":[
+            "+<*>",
             "+<*.c>",
             "+<*.cpp>",
             "+<*.h>"
