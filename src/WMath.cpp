@@ -25,7 +25,7 @@
 
 extern "C" {
     #include <stdlib.h>
-    #include "esp_system.h"
+    #include <math.h>
 }
 
 void randomSeed(unsigned long seed)
@@ -37,23 +37,7 @@ void randomSeed(unsigned long seed)
 
 long random(long howbig)
 {
-    uint32_t x = esp_random();
-    uint64_t m = uint64_t(x) * uint64_t(howbig);
-    uint32_t l = uint32_t(m);
-    if ((long)l < howbig) {
-        uint32_t t = -howbig;
-        if ((long)t >= howbig) {
-            t -= howbig;
-            if ((long)t >= howbig) 
-                t %= howbig;
-        }
-        while (l < t) {
-            x = esp_random();
-            m = uint64_t(x) * uint64_t(howbig);
-            l = uint32_t(m);
-        }
-    }
-    return m >> 32;
+    return rand() % howbig;
 }
 
 long random(long howsmall, long howbig)
