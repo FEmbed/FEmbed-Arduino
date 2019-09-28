@@ -57,6 +57,12 @@ extern "C" void delay(uint32_t ms);
 #define LOG_TAG "notag"
 
 #define millis sys_now
+
+inline void safecpy(void *dest, void *src, uint32_t len)
+{
+    for(uint32_t i=0; i<len; i++)
+        ((uint8_t *)dest)[i] = ((uint8_t *)src)[i];
+}
 #endif
 
 inline void yield() { portYIELD(); }
@@ -68,12 +74,6 @@ extern "C" {
 
 typedef bool boolean;
 #define bit(b) (1UL << (b))
-
-inline void safecpy(void *dest, void *src, uint32_t len)
-{
-	for(uint32_t i=0; i<len; i++)
-		((uint8_t *)dest)[i] = ((uint8_t *)src)[i];
-}
 
 #ifdef __cplusplus
 } // extern "C"
