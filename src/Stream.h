@@ -48,8 +48,10 @@ class Stream: public Print {
         virtual int read() = 0;
         virtual int peek() = 0;
 
+        virtual ~Stream() {}
         Stream() {
             _timeout = 1000;
+            _startMillis = 0;
         }
 
 // parsing methods
