@@ -31,30 +31,43 @@
 #define delay  fe_delay
 #endif
 
-#if USE_ESPRESSIF8266
+#if defined(USE_ESPRESSIF8266) || defined(ESP_PLATFORM)
 
 #include "esp_log.h"
+#if defined(ESP_PLATFORM)
+#include "freertos/portmacro.h"
+#else
 #include "portmacro.h"
+#endif
+
+#define USE_FEMBED_LWIP
 
 extern "C" uint32_t sys_now(void);
 extern "C" void delay(uint32_t ms);
 
-#ifndef elog_i
-#define elog_v ESP_LOGV
-#define elog_d ESP_LOGD
-#define elog_i ESP_LOGI
-#define elog_w ESP_LOGW
-#define elog_e ESP_LOGE
-#endif
+#define DMA_MALLOC  malloc
+#define DMA_FREE    free
 
+#if USE_FEMBED
 #define log_a(...)       elog_a(LOG_TAG, __VA_ARGS__)
 #define log_e(...)       elog_e(LOG_TAG, __VA_ARGS__)
 #define log_w(...)       elog_w(LOG_TAG, __VA_ARGS__)
 #define log_i(...)       elog_i(LOG_TAG, __VA_ARGS__)
 #define log_d(...)       elog_d(LOG_TAG, __VA_ARGS__)
 #define log_v(...)       elog_v(LOG_TAG, __VA_ARGS__)
+#else
+#define log_a(...)
+#define log_e(...)       ESP_LOGE(LOG_TAG, __VA_ARGS__)
+#define log_w(...)       ESP_LOGW(LOG_TAG, __VA_ARGS__)
+#define log_i(...)       ESP_LOGI(LOG_TAG, __VA_ARGS__)
+#define log_d(...)       ESP_LOGD(LOG_TAG, __VA_ARGS__)
+#define log_v(...)       ESP_LOGV(LOG_TAG, __VA_ARGS__)
+#endif
 
 #define LOG_TAG "notag"
+
+#include <memory>
+using std::shared_ptr;
 
 #define millis sys_now
 
