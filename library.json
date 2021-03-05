@@ -6,12 +6,12 @@
     {
         "name": "Gene Kong",
         "email": "gyx_edu@qq.com",
-        "url": "https://github.com/FastEmbedded/FEmbed-Arduino.git"
+        "url": "https://github.com/FEmbed/FEmbed-Arduino.git"
     },
     "repository":
     {
         "type": "git",
-        "url": "https://github.com/FastEmbedded/FEmbed-Arduino.git"
+        "url": "https://github.com/FEmbed/FEmbed-Arduino.git"
     },
     "version": "0.2.0",
     "frameworks": ["esp8266-rtos-sdk", "fembed", "espidf"],
@@ -23,12 +23,5 @@
             "+<*.cpp>",
             "+<*.h>"
         ]
-    },
-    "dependencies": [
-    {
-        "name": "FEmbed-RawLwip",
-        "version": ">=0.1.0",
-        "platforms": ["ststm32"]
     }
-    ]
 }
