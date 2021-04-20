@@ -67,7 +67,8 @@ extern "C" void delay(uint32_t ms);
 #define LOG_TAG "notag"
 
 #include <memory>
-using std::shared_ptr;
+#include <list>
+#include <vector>
 
 #define millis sys_now
 
