@@ -79,6 +79,7 @@ class IPAddress: public Printable {
         IPAddress(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet);
         IPAddress(uint32_t address) { ctor32(address); }
         IPAddress(int address) { ctor32(address); }
+        IPAddress(const char *address);
         IPAddress(const uint8_t *address);
 
         bool fromString(const char *address);
