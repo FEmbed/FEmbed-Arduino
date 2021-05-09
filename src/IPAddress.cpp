@@ -48,12 +48,12 @@ void IPAddress::ctor32(uint32_t address) {
     v4() = address;
 }
 
+IPAddress::IPAddress(const char *address) {
+	fromString((const char *)address);
+}
+
 IPAddress::IPAddress(const uint8_t *address) {
-    setV4();
-    (*this)[0] = address[0];
-    (*this)[1] = address[1];
-    (*this)[2] = address[2];
-    (*this)[3] = address[3];
+	fromString((const char *)address);
 }
 
 bool IPAddress::fromString(const char *address) {

@@ -45,9 +45,6 @@
 extern "C" uint32_t sys_now(void);
 extern "C" void delay(uint32_t ms);
 
-#define DMA_MALLOC  malloc
-#define DMA_FREE    free
-
 #if USE_FEMBED
 #define log_a(...)       elog_a(LOG_TAG, __VA_ARGS__)
 #define log_e(...)       elog_e(LOG_TAG, __VA_ARGS__)
@@ -67,7 +64,8 @@ extern "C" void delay(uint32_t ms);
 #define LOG_TAG "notag"
 
 #include <memory>
-using std::shared_ptr;
+#include <list>
+#include <vector>
 
 #define millis sys_now
 
