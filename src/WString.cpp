@@ -784,6 +784,11 @@ void String::trim(void) {
     wbuffer()[newlen] = 0;
 }
 
+void String::clear()
+{
+    invalidate();
+}
+
 // /*********************************************/
 // /*  Parsing / Conversion                     */
 // /*********************************************/
