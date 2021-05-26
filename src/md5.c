@@ -1,3 +1,4 @@
+#if !defined(ESP_PLATFORM)
 #include "md5.h"
 #include <string.h>
 
@@ -160,3 +161,4 @@ void MD5Transform(unsigned int state[4],unsigned char block[64])
      state[2] += c;
      state[3] += d;
 }
+#endif
