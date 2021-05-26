@@ -23,7 +23,6 @@
 
 #include <Arduino.h>
 #include "WString.h"
-#include <stdio.h>
 #include "stdlib_noniso.h"
 
 /*********************************************/
@@ -32,13 +31,18 @@
 
 String::String(const char *cstr) {
     init();
-    if(cstr)
+    if (cstr)
         copy(cstr, strlen(cstr));
 }
 
 String::String(const String &value) {
     init();
     *this = value;
+}
+
+String::String(const __FlashStringHelper *pstr) {
+    init();
+    *this = pstr; // see operator =
 }
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
@@ -126,13 +130,13 @@ String::~String() {
 
 inline void String::init(void) {
     setSSO(false);
+    setBuffer(nullptr);
     setCapacity(0);
     setLen(0);
-    setBuffer(nullptr);
 }
 
 void String::invalidate(void) {
-    if(!sso() && wbuffer())
+    if(!isSSO() && wbuffer())
         free(wbuffer());
     init();
 }
@@ -150,18 +154,22 @@ unsigned char String::reserve(unsigned int size) {
 
 unsigned char String::changeBuffer(unsigned int maxStrLen) {
     // Can we use SSO here to avoid allocation?
-    if (maxStrLen < sizeof(sso_buf)) {
-        if (sso() || !buffer()) {
+    if (maxStrLen < sizeof(sso.buff) - 1) {
+        if (isSSO() || !buffer()) {
             // Already using SSO, nothing to do
+	    uint16_t oldLen = len();
             setSSO(true);
+            setLen(oldLen);
             return 1;
-        } else { // if bufptr && !sso()
-            // Using bufptr, need to shrink into sso_buff
-            char temp[sizeof(sso_buf)];
+        } else { // if bufptr && !isSSO()
+            // Using bufptr, need to shrink into sso.buff
+            char temp[sizeof(sso.buff)];
             memcpy(temp, buffer(), maxStrLen);
             free(wbuffer());
+            uint16_t oldLen = len();
             setSSO(true);
             memcpy(wbuffer(), temp, maxStrLen);
+            setLen(oldLen);
             return 1;
         }
     }
@@ -172,12 +180,12 @@ unsigned char String::changeBuffer(unsigned int maxStrLen) {
         return false;
     }
     uint16_t oldLen = len();
-    char *newbuffer = (char *) realloc(sso() ? nullptr : wbuffer(), newSize);
-    if(newbuffer) {
+    char *newbuffer = (char *) realloc(isSSO() ? nullptr : wbuffer(), newSize);
+    if (newbuffer) {
         size_t oldSize = capacity() + 1; // include NULL.
-        if (sso()) {
+        if (isSSO()) {
             // Copy the SSO buffer into allocated space
-            memcpy(newbuffer, sso_buf, sizeof(sso_buf));
+            memmove(newbuffer, sso.buff, sizeof(sso.buff));
         }
         if (newSize > oldSize)
         {
@@ -185,8 +193,8 @@ unsigned char String::changeBuffer(unsigned int maxStrLen) {
         }
         setSSO(false);
         setCapacity(newSize - 1);
-        setLen(oldLen); // Needed in case of SSO where len() never existed
         setBuffer(newbuffer);
+        setLen(oldLen); // Needed in case of SSO where len() never existed
         return 1;
     }
     return 0;
@@ -201,30 +209,39 @@ String & String::copy(const char *cstr, unsigned int length) {
         invalidate();
         return *this;
     }
+    memmove(wbuffer(), cstr, length + 1);
     setLen(length);
-    strcpy(wbuffer(), cstr);
     return *this;
 }
 
+String & String::copy(const __FlashStringHelper *pstr, unsigned int length) {
+    if (!reserve(length)) {
+        invalidate();
+        return *this;
+    }
+    memcpy_P(wbuffer(), (PGM_P)pstr, length + 1); // We know wbuffer() cannot ever be in PROGMEM, so memcpy safe here
+    setLen(length);
+    return *this;
+}
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
 void String::move(String &rhs) {
     if(buffer()) {
         if(capacity() >= rhs.len()) {
-            strcpy(wbuffer(), rhs.buffer());
+            memmove(wbuffer(), rhs.buffer(), rhs.length() + 1);
             setLen(rhs.len());
 	    rhs.invalidate();
             return;
         } else {
-            if (!sso()) {
+            if (!isSSO()) {
                 free(wbuffer());
                 setBuffer(nullptr);
             }
         }
     }
-    if (rhs.sso()) {
+    if (rhs.isSSO()) {
         setSSO(true);
-        memmove(sso_buf, rhs.sso_buf, sizeof(sso_buf));
+        memmove(sso.buff, rhs.sso.buff, sizeof(sso.buff));
     } else {
         setSSO(false);
         setBuffer(rhs.wbuffer());
@@ -233,8 +250,8 @@ void String::move(String &rhs) {
     setLen(rhs.len());
     rhs.setSSO(false);
     rhs.setCapacity(0);
-    rhs.setLen(0);
     rhs.setBuffer(nullptr);
+    rhs.setLen(0);
 }
 #endif
 
@@ -273,6 +290,14 @@ String & String::operator =(const char *cstr) {
     return *this;
 }
 
+String & String::operator = (const __FlashStringHelper *pstr)
+{
+    if (pstr) copy(pstr, strlen_P((PGM_P)pstr));
+    else invalidate();
+
+    return *this;
+}
+
 // /*********************************************/
 // /*  concat                                   */
 // /*********************************************/
@@ -288,7 +313,7 @@ unsigned char String::concat(const String &s) {
             return 1;
         if (!reserve(newlen))
             return 0;
-        memcpy(wbuffer() + len(), buffer(), len());
+        memmove(wbuffer() + len(), buffer(), len());
         setLen(newlen);
         wbuffer()[len()] = 0;
         return 1;
@@ -305,7 +330,12 @@ unsigned char String::concat(const char *cstr, unsigned int length) {
         return 1;
     if(!reserve(newlen))
         return 0;
-    strcpy(wbuffer() + len(), cstr);
+    if (cstr >= wbuffer() && cstr < wbuffer() + len())
+        // compatible with SSO in ram #6155 (case "x += x.c_str()")
+        memmove(wbuffer() + len(), cstr, length + 1);
+    else
+        // compatible with source in flash #6367
+        memcpy_P(wbuffer() + len(), cstr, length + 1);
     setLen(newlen);
     return 1;
 }
@@ -363,6 +393,17 @@ unsigned char String::concat(double num) {
     char buf[20];
     char* string = dtostrf(num, 4, 2, buf);
     return concat(string, strlen(string));
+}
+
+unsigned char String::concat(const __FlashStringHelper * str) {
+    if (!str) return 0;
+    int length = strlen_P((PGM_P)str);
+    if (length == 0) return 1;
+    unsigned int newlen = len() + length;
+    if (!reserve(newlen)) return 0;
+    memcpy_P(wbuffer() + len(), (PGM_P)str, length + 1);
+    setLen(newlen);
+    return 1;
 }
 
 /*********************************************/
@@ -439,6 +480,14 @@ StringSumHelper & operator +(const StringSumHelper &lhs, double num) {
     return a;
 }
 
+StringSumHelper & operator + (const StringSumHelper &lhs, const __FlashStringHelper *rhs)
+{
+    StringSumHelper &a = const_cast<StringSumHelper&>(lhs);
+    if (!a.concat(rhs))
+        a.invalidate();
+    return a;
+}
+
 // /*********************************************/
 // /*  Comparison                               */
 // /*********************************************/
@@ -506,7 +555,7 @@ unsigned char String::equalsConstantTime(const String &s2) const {
     //at this point lengths are the same
     if(len() == 0)
         return 1;
-    //at this point lenghts are the same and non-zero
+    //at this point lengths are the same and non-zero
     const char *p1 = buffer();
     const char *p2 = s2.buffer();
     unsigned int equalchars = 0;
@@ -695,6 +744,7 @@ void String::replace(const String& find, const String& replace) {
         }
     } else if(diff < 0) {
         char *writeTo = wbuffer();
+        unsigned int l = len();
         while((foundAt = strstr(readFrom, find.buffer())) != NULL) {
             unsigned int n = foundAt - readFrom;
             memmove(writeTo, readFrom, n);
@@ -702,9 +752,10 @@ void String::replace(const String& find, const String& replace) {
             memmove(writeTo, replace.buffer(), replace.len());
             writeTo += replace.len();
             readFrom = foundAt + find.len();
-            setLen(len() + diff);
+            l += diff;
         }
         memmove(writeTo, readFrom, strlen(readFrom)+1);
+        setLen(l);
     } else {
         unsigned int size = len(); // compute size needed for result
         while((foundAt = strstr(readFrom, find.buffer())) != NULL) {
@@ -719,7 +770,7 @@ void String::replace(const String& find, const String& replace) {
         while(index >= 0 && (index = lastIndexOf(find, index)) >= 0) {
             readFrom = wbuffer() + index + find.len();
             memmove(readFrom + diff, readFrom, len() - (readFrom - buffer()));
-	    int newLen = len() + diff;
+            int newLen = len() + diff;
             memmove(wbuffer() + index, replace.buffer(), replace.len());
             setLen(newLen);
             wbuffer()[newLen] = 0;
@@ -747,8 +798,8 @@ void String::remove(unsigned int index, unsigned int count) {
     }
     char *writeTo = wbuffer() + index;
     unsigned int newlen = len() - count;
-    setLen(newlen);
     memmove(writeTo, wbuffer() + index + count, newlen - index);
+    setLen(newlen);
     wbuffer()[newlen] = 0;
 }
 
@@ -778,15 +829,10 @@ void String::trim(void) {
     while(isspace(*end) && end >= begin)
         end--;
     unsigned int newlen = end + 1 - begin;
-    setLen(newlen);
     if(begin > buffer())
         memmove(wbuffer(), begin, newlen);
+    setLen(newlen);
     wbuffer()[newlen] = 0;
-}
-
-void String::clear()
-{
-    invalidate();
 }
 
 // /*********************************************/

@@ -27,12 +27,17 @@
 #include <string.h>
 #include <ctype.h>
 #include <pgmspace.h>
+#include <stdint.h>
 
 // An inherited class for holding the result of a concatenation.  These
 // result objects are assumed to be writable by subsequent concatenations.
 class StringSumHelper;
 
-#define F(string_literal) (string_literal)
+// an abstract class used as a means to proide a unique pointer type
+// but really has no body
+class __FlashStringHelper;
+#define FPSTR(pstr_pointer) (reinterpret_cast<const __FlashStringHelper *>(pstr_pointer))
+#define F(string_literal) (FPSTR(PSTR(string_literal)))
 
 // The string class
 class String {
@@ -51,6 +56,7 @@ class String {
         // be false).
         String(const char *cstr = "");
         String(const String &str);
+        String(const __FlashStringHelper *str);
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
         String(String &&rval);
         String(StringSumHelper &&rval);
@@ -77,12 +83,19 @@ class String {
                 return 0;
             }
         }
+        inline void clear(void) {
+            setLen(0);
+        }
+        inline bool isEmpty(void) const {
+            return length() == 0;
+        }
 
         // creates a copy of the assigned value.  if the value is null or
         // invalid, or if the memory allocation fails, the string will be
         // marked as invalid ("if (s)" will be false).
         String & operator =(const String &rhs);
         String & operator =(const char *cstr);
+        String & operator = (const __FlashStringHelper *str);
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
         String & operator =(String &&rval);
         String & operator =(StringSumHelper &&rval);
@@ -103,6 +116,7 @@ class String {
         unsigned char concat(unsigned long num);
         unsigned char concat(float num);
         unsigned char concat(double num);
+        unsigned char concat(const __FlashStringHelper * str);
 
         // if there's not enough memory for the concatenated value, the string
         // will be left unchanged (but this isn't signalled in any way)
@@ -146,6 +160,10 @@ class String {
             concat(num);
             return (*this);
         }
+        String & operator += (const __FlashStringHelper *str){
+            concat(str);
+            return (*this);
+        }
 
         friend StringSumHelper & operator +(const StringSumHelper &lhs, const String &rhs);
         friend StringSumHelper & operator +(const StringSumHelper &lhs, const char *cstr);
@@ -157,6 +175,7 @@ class String {
         friend StringSumHelper & operator +(const StringSumHelper &lhs, unsigned long num);
         friend StringSumHelper & operator +(const StringSumHelper &lhs, float num);
         friend StringSumHelper & operator +(const StringSumHelper &lhs, double num);
+        friend StringSumHelper & operator +(const StringSumHelper &lhs, const __FlashStringHelper *rhs);
 
         // comparison (only works w/ Strings and "strings")
         operator StringIfHelperType() const {
@@ -184,8 +203,20 @@ class String {
         unsigned char equalsIgnoreCase(const String &s) const;
         unsigned char equalsConstantTime(const String &s) const;
         unsigned char startsWith(const String &prefix) const;
+        unsigned char startsWith(const char *prefix) const {
+            return this->startsWith(String(prefix));
+        }
+        unsigned char startsWith(const __FlashStringHelper *prefix) const {
+            return this->startsWith(String(prefix));
+        }
         unsigned char startsWith(const String &prefix, unsigned int offset) const;
         unsigned char endsWith(const String &suffix) const;
+        unsigned char endsWith(const char *suffix) const {
+            return this->endsWith(String(suffix));
+        }
+        unsigned char endsWith(const __FlashStringHelper * suffix) const {
+            return this->endsWith(String(suffix));
+        }
 
         // character access
         char charAt(unsigned int index) const;
@@ -219,14 +250,28 @@ class String {
 
         // modification
         void replace(char find, char replace);
-        void replace(const String& find, const String& replace);
+        void replace(const String &find, const String &replace);
+        void replace(const char *find, const String &replace) {
+            this->replace(String(find), replace);
+        }
+        void replace(const __FlashStringHelper *find, const String &replace) {
+            this->replace(String(find), replace);
+        }
+        void replace(const char *find, const char *replace) {
+            this->replace(String(find), String(replace));
+        }
+        void replace(const __FlashStringHelper *find, const char *replace) {
+            this->replace(String(find), String(replace));
+        }
+        void replace(const __FlashStringHelper *find, const __FlashStringHelper *replace) {
+            this->replace(String(find), String(replace));
+        }
         void remove(unsigned int index);
         void remove(unsigned int index, unsigned int count);
         void toLowerCase(void);
         void toUpperCase(void);
         void trim(void);
-        void clear();
-        
+
         // parsing/conversion
         long toInt(void) const;
         float toFloat(void) const;
@@ -236,30 +281,46 @@ class String {
         // Contains the string info when we're not in SSO mode
         struct _ptr { 
             char *   buff;
-            uint16_t cap;
-            uint16_t len;
+            uint32_t cap;
+            uint32_t len;
         };
-
-        // SSO is handled by checking the last byte of sso_buff.
-        // When not in SSO mode, that byte is set to 0xff, while when in SSO mode it is always 0x00 (so it can serve as the string terminator as well as a flag)
-        // This allows strings up up to 12 (11 + \0 termination) without any extra space.
-        enum { SSOSIZE = sizeof(struct _ptr) + 4 }; // Characters to allocate space for SSO, must be 12 or more
-        enum { CAPACITY_MAX = 65535 }; // If size of capacity changed, be sure to update this enum
+        // This allows strings up up to 11 (10 + \0 termination) without any extra space.
+        enum { SSOSIZE = sizeof(struct _ptr) + 4 - 1 }; // Characters to allocate space for SSO, must be 12 or more
+        struct _sso {
+            char     buff[SSOSIZE];
+            unsigned char len   : 7; // Ensure only one byte is allocated by GCC for the bitfields
+            unsigned char isSSO : 1;
+        } __attribute__((packed)); // Ensure that GCC doesn't expand the flag byte to a 32-bit word for alignment issues
+#ifdef BOARD_HAS_PSRAM
+        enum { CAPACITY_MAX = 3145728 }; 
+#else
+        enum { CAPACITY_MAX = 65535 }; 
+#endif
         union {
             struct _ptr ptr;
-            char sso_buf[SSOSIZE];
+            struct _sso sso;
         };
         // Accessor functions
-        inline bool sso() const { return sso_buf[SSOSIZE - 1] == 0; }
-        inline unsigned int len() const { return sso() ? strlen(sso_buf) : ptr.len; }
-        inline unsigned int capacity() const { return sso() ? SSOSIZE - 1 : ptr.cap; }
-        inline void setSSO(bool sso) { sso_buf[SSOSIZE - 1] = sso ? 0x00 : 0xff; }
-        inline void setLen(int len) { if (!sso()) ptr.len = len; }
-        inline void setCapacity(int cap) { if (!sso()) ptr.cap = cap; }
-	inline void setBuffer(char *buff) { if (!sso()) ptr.buff = buff; }
+        inline bool isSSO() const { return sso.isSSO; }
+        inline unsigned int len() const { return isSSO() ? sso.len : ptr.len; }
+        inline unsigned int capacity() const { return isSSO() ? (unsigned int)SSOSIZE - 1 : ptr.cap; } // Size of max string not including terminal NUL
+        inline void setSSO(bool set) { sso.isSSO = set; }
+        inline void setLen(int len) {
+            if (isSSO()) {
+                sso.len = len;
+                sso.buff[len] = 0;
+            } else {
+                ptr.len = len;
+                if (ptr.buff) {
+                    ptr.buff[len] = 0;
+                }
+            }
+        }
+        inline void setCapacity(int cap) { if (!isSSO()) ptr.cap = cap; }
+        inline void setBuffer(char *buff) { if (!isSSO()) ptr.buff = buff; }
         // Buffer accessor functions
-        inline const char *buffer() const { return (const char *)(sso() ? sso_buf : ptr.buff); }
-        inline char *wbuffer() const { return sso() ? const_cast<char *>(sso_buf) : ptr.buff; } // Writable version of buffer
+        inline const char *buffer() const { return (const char *)(isSSO() ? sso.buff : ptr.buff); }
+        inline char *wbuffer() const { return isSSO() ? const_cast<char *>(sso.buff) : ptr.buff; } // Writable version of buffer
 
     protected:
         void init(void);
@@ -269,6 +330,7 @@ class String {
 
         // copy and move
         String & copy(const char *cstr, unsigned int length);
+        String & copy(const __FlashStringHelper *pstr, unsigned int length);
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
         void move(String &rhs);
 #endif
