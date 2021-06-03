@@ -6,6 +6,8 @@ set(priv_requires)
 
 set(srcs    "src/esp_port.c"
             "src/base64.cpp" 
+            "src/libb64/cdecode.c"
+            "src/libb64/cencode.c"
             "src/crc.cpp"
             "src/md5.c" 
             "src/MD5Builder.cpp"
