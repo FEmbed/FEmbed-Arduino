@@ -35,6 +35,13 @@ String::String(const char *cstr) {
         copy(cstr, strlen(cstr));
 }
 
+String::String(const char *cstr, size_t size)
+{
+    init();
+    if (cstr)
+        copy(cstr, size);
+}
+
 String::String(const String &value) {
     init();
     *this = value;
