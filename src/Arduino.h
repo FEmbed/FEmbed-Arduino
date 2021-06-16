@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <WString.h>
 
+#include "app.h"
 #if USE_FEMBED
 #include <FEmbed.h>
 
