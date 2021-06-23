@@ -16,12 +16,12 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#ifndef __ESP8266_MD5_BUILDER__
-#define __ESP8266_MD5_BUILDER__
+#ifndef __ESP_MD5_BUILDER__
+#define __ESP_MD5_BUILDER__
 
 #include <WString.h>
 #include <Stream.h>
-#include "rom/md5_hash.h"
+#include "esp32/rom/md5_hash.h"
 
 class MD5Builder
 {
