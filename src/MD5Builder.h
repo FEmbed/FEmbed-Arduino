@@ -21,12 +21,12 @@
 
 #include <WString.h>
 #include <Stream.h>
-#include "esp32/rom/md5_hash.h"
+#include <md5.h>
 
 class MD5Builder
 {
 private:
-    struct MD5Context _ctx;
+    MD5_CTX _ctx;
     uint8_t _buf[16];
 public:
     void begin(void);

@@ -94,7 +94,11 @@ bool MD5Builder::addStream(Stream & stream, const size_t maxLen)
 
 void MD5Builder::calculate(void)
 {
+#if defined(ESP_PLATFORM)
     MD5Final(_buf, &_ctx);
+#else
+    MD5Final(&_ctx, _buf);
+#endif
 }
 
 void MD5Builder::getBytes(uint8_t * output)

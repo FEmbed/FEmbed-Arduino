@@ -29,7 +29,7 @@
 #include <FEmbed.h>
 
 #define millis fe_get_ticks
-#define delay  fe_delay
+inline void delay(unsigned int ms)  { fe_delay(ms); }
 #endif
 
 #if defined(USE_ESPRESSIF8266) || defined(ESP_PLATFORM)

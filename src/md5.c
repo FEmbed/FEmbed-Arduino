@@ -77,7 +77,7 @@ void MD5Decode(unsigned int *output,unsigned char *input,unsigned int len)
            j+=4;
      }
 }
-void MD5Transform(unsigned int state[4],unsigned char block[64])
+void MD5Transform(unsigned int state[4], unsigned char block[64])
 {
      unsigned int a = state[0];
      unsigned int b = state[1];
