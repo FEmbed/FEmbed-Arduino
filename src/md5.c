@@ -1,4 +1,4 @@
-#if !defined(ESP_PLATFORM)
+// #if !defined(ESP_PLATFORM)
 #include "md5.h"
 #include <string.h>
 
@@ -40,7 +40,7 @@ void MD5Update(MD5_CTX *context,unsigned char *input,unsigned int inputlen)
     }
     memcpy(&context->buffer[index],&input[i],inputlen-i);
 }
-void MD5Final(MD5_CTX *context,unsigned char digest[16])
+void MD5Final(unsigned char digest[16], MD5_CTX *context)
 {
     unsigned int index = 0,padlen = 0;
     unsigned char bits[8];
@@ -161,4 +161,4 @@ void MD5Transform(unsigned int state[4], unsigned char block[64])
      state[2] += c;
      state[3] += d;
 }
-#endif
+// #endif
