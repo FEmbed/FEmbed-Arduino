@@ -36,7 +36,17 @@ inline void delay(unsigned int ms)  { fe_delay(ms); }
 
 #include "esp_log.h"
 #if defined(ESP_PLATFORM)
-#include "freertos/portmacro.h"
+#include "freertos/FreeRTOS.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern void vPortYield(void);
+
+#ifdef __cplusplus
+ }
+#endif
+
 #else
 #include "portmacro.h"
 #endif
@@ -77,7 +87,7 @@ inline void safecpy(void *dest, void *src, uint32_t len)
 }
 #endif
 
-inline void yield() { portYIELD(); }
+inline void yield() { vPortYield(); }
 
 
 #ifdef __cplusplus
