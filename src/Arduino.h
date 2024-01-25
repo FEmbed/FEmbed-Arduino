@@ -38,6 +38,7 @@
 
 extern "C" uint32_t sys_now(void);
 extern "C" void delay(uint32_t ms);
+extern "C" void PendSV(int req);
 
 #ifndef elog_i
 #define elog_v ESP_LOGV

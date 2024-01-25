@@ -27,7 +27,7 @@ extern "C" {
 #include "libb64/cdecode.h"
 #include "libb64/cencode.h"
 }
-#include "base64.h"
+#include "base64.hpp"
 
 /**
  * convert input data to base64
